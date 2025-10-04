@@ -1,8 +1,8 @@
 # id_updater.py
 #
-# 这是一个经过升级的、一次性的HTTP服务器，用于根据用户选择的模式
-# (DirectChat 或 Battle) 接收来自油猴脚本的会话信息，
-# 并将其更新到 config.jsonc 文件中。
+# This is an enhanced one-off HTTP server. It receives session details from
+# the userscript based on the chosen mode (DirectChat or Battle) and writes
+# them back to config.jsonc.
 
 import http.server
 import socketserver
@@ -12,21 +12,21 @@ import threading
 import os
 import requests
 
-# --- 配置 ---
+# --- Configuration ---
 HOST = "127.0.0.1"
 PORT = 5103
 CONFIG_PATH = 'config.jsonc'
 
 def read_config():
-    """读取并解析 config.jsonc 文件，移除注释以便解析。"""
+    """Read config.jsonc and strip comments before parsing."""
     if not os.path.exists(CONFIG_PATH):
-        print(f"❌ 错误：配置文件 '{CONFIG_PATH}' 不存在。")
+        print(f"❌ Error: configuration file '{CONFIG_PATH}' does not exist.")
         return None
     try:
         with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
-        # 更稳健地移除注释，逐行处理以避免错误删除URL中的 "//"
+        # Remove comments carefully so URLs containing '//' remain intact
         no_comments_lines = []
         in_block_comment = False
         for line in lines:
@@ -55,45 +55,41 @@ def read_config():
         json_content = "".join(no_comments_lines)
         return json.loads(json_content)
     except Exception as e:
-        print(f"❌ 读取或解析 '{CONFIG_PATH}' 时发生错误: {e}")
+        print(f"❌ Failed to read or parse '{CONFIG_PATH}': {e}")
         return None
 
 def save_config_value(key, value):
-    """
-    安全地更新 config.jsonc 中的单个键值对，保留原始格式和注释。
-    仅适用于值为字符串或数字的情况。
-    """
+    """Safely update a single key in config.jsonc while preserving formatting."""
     try:
         with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # 使用正则表达式安全地替换值
-        # 它会查找 "key": "any value" 并替换 "any value"
+        # Use regex to replace the key value safely
         pattern = re.compile(rf'("{key}"\s*:\s*")[^"]*(")')
         new_content, count = pattern.subn(rf'\g<1>{value}\g<2>', content, 1)
 
         if count == 0:
-            print(f"🤔 警告: 未能在 '{CONFIG_PATH}' 中找到键 '{key}'。")
+            print(f"🤔 Warning: key '{key}' not found in '{CONFIG_PATH}'.")
             return False
 
         with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
             f.write(new_content)
         return True
     except Exception as e:
-        print(f"❌ 更新 '{CONFIG_PATH}' 时发生错误: {e}")
+        print(f"❌ Failed to update '{CONFIG_PATH}': {e}")
         return False
 
 def save_session_ids(session_id, message_id):
-    """将新的会话ID更新到 config.jsonc 文件。"""
-    print(f"\n📝 正在尝试将ID写入 '{CONFIG_PATH}'...")
+    """Persist the captured session/message IDs to config.jsonc."""
+    print(f"\n📝 Attempting to write IDs to '{CONFIG_PATH}'...")
     res1 = save_config_value("session_id", session_id)
     res2 = save_config_value("message_id", message_id)
     if res1 and res2:
-        print(f"✅ 成功更新ID。")
+        print("✅ IDs updated successfully.")
         print(f"   - session_id: {session_id}")
         print(f"   - message_id: {message_id}")
     else:
-        print(f"❌ 更新ID失败。请检查上述错误信息。")
+        print("❌ Failed to update IDs. Review the errors above.")
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -119,7 +115,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 if session_id and message_id:
                     print("\n" + "=" * 50)
-                    print("🎉 成功从浏览器捕获到ID！")
+                    print("🎉 Successfully captured IDs from the browser!")
                     print(f"  - Session ID: {session_id}")
                     print(f"  - Message ID: {message_id}")
                     print("=" * 50)
@@ -131,7 +127,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(b'{"status": "success"}')
 
-                    print("\n任务完成，服务器将在1秒后自动关闭。")
+                    print("\nDone! The server will shut down in one second.")
                     threading.Thread(target=self.server.shutdown).start()
 
                 else:
@@ -155,30 +151,30 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 def run_server():
     with socketserver.TCPServer((HOST, PORT), RequestHandler) as httpd:
         print("\n" + "="*50)
-        print("  🚀 会话ID更新监听器已启动")
-        print(f"  - 监听地址: http://{HOST}:{PORT}")
-        print("  - 请在浏览器中操作LMArena页面以触发ID捕获。")
-        print("  - 捕获成功后，此脚本将自动关闭。")
+        print("  🚀 Session ID capture listener started")
+        print(f"  - Listening on: http://{HOST}:{PORT}")
+        print("  - Trigger ID capture from an LMArena tab in your browser.")
+        print("  - The script will exit automatically once IDs are received.")
         print("="*50)
         httpd.serve_forever()
 
 def notify_api_server():
-    """通知主 API 服务器，ID 更新流程已开始。"""
+    """Notify the main API server that ID capture has begun."""
     api_server_url = "http://127.0.0.1:5102/internal/start_id_capture"
     try:
         response = requests.post(api_server_url, timeout=3)
         if response.status_code == 200:
-            print("✅ 已成功通知主服务器激活ID捕获模式。")
+            print("✅ Main server notified to activate ID capture mode.")
             return True
         else:
-            print(f"⚠️ 通知主服务器失败，状态码: {response.status_code}。")
-            print(f"   - 错误信息: {response.text}")
+            print(f"⚠️ Main server responded with status {response.status_code}.")
+            print(f"   - Details: {response.text}")
             return False
     except requests.ConnectionError:
-        print("❌ 无法连接到主 API 服务器。请确保 api_server.py 正在运行。")
+        print("❌ Unable to reach the main API server. Ensure api_server.py is running.")
         return False
     except Exception as e:
-        print(f"❌ 通知主服务器时发生未知错误: {e}")
+        print(f"❌ Unexpected error while notifying the main server: {e}")
         return False
 
 if __name__ == "__main__":
@@ -186,11 +182,11 @@ if __name__ == "__main__":
     if not config:
         exit(1)
 
-    # --- 获取用户选择 ---
+    # --- Prompt the user for their preferred mode ---
     last_mode = config.get("id_updater_last_mode", "direct_chat")
     mode_map = {"a": "direct_chat", "b": "battle"}
     
-    prompt = f"请选择模式 [a: DirectChat, b: Battle] (默认为上次选择的: {last_mode}): "
+    prompt = f"Select mode [a: DirectChat, b: Battle] (default: {last_mode}): "
     choice = input(prompt).lower().strip()
 
     if not choice:
@@ -198,15 +194,15 @@ if __name__ == "__main__":
     else:
         mode = mode_map.get(choice)
         if not mode:
-            print(f"无效输入，将使用默认值: {last_mode}")
+            print(f"Invalid choice. Using default: {last_mode}")
             mode = last_mode
 
     save_config_value("id_updater_last_mode", mode)
-    print(f"当前模式: {mode.upper()}")
+    print(f"Current mode: {mode.upper()}")
     
     if mode == 'battle':
         last_target = config.get("id_updater_battle_target", "A")
-        target_prompt = f"请选择要更新的消息 [A(使用search模型必须选A) 或 B] (默认为上次选择的: {last_target}): "
+        target_prompt = f"Select which assistant to update [A (required for search models) or B] (default: {last_target}): "
         target_choice = input(target_prompt).upper().strip()
 
         if not target_choice:
@@ -214,16 +210,16 @@ if __name__ == "__main__":
         elif target_choice in ["A", "B"]:
             target = target_choice
         else:
-            print(f"无效输入，将使用默认值: {last_target}")
+            print(f"Invalid choice. Using default: {last_target}")
             target = last_target
         
         save_config_value("id_updater_battle_target", target)
-        print(f"Battle 目标: Assistant {target}")
-        print("请注意：无论选择A或B，捕获到的ID都会更新到主 session_id 和 message_id。")
+        print(f"Battle target: Assistant {target}")
+        print("Note: regardless of A or B, the captured IDs overwrite the primary session/message IDs.")
 
-    # 在启动监听之前，先通知主服务器
+    # Notify the main server before starting the listener
     if notify_api_server():
         run_server()
-        print("服务器已关闭。")
+        print("Server stopped.")
     else:
-        print("\n由于无法通知主服务器，ID更新流程中断。")
+        print("\nID capture aborted because the main server could not be notified.")

@@ -1,83 +1,65 @@
 {
-  // 版本号
-  // 用于程序更新检查，请不要手动修改。
+  // Version number used by the auto-update checker. Do not modify manually.
   "version": "2.7.6",
 
-  // --- 会话设置 ---
-  // 当前 LMArena 页面的会话 ID。
-  // 通过运行 id_updater.py 可以自动更新。
+  // --- Session settings ---
+  // Current LMArena session ID (run id_updater.py to refresh automatically).
   "session_id": "cebc557a-3f35-4794-beaf-6e33d947e0cd",
 
-  // 当前会话的最后一条消息 ID。
-  // 通过运行 id_updater.py 可以自动更新。
+  // Current message ID for the active session (also updated by id_updater.py).
   "message_id": "562414bc-0ea8-412a-bd15-8ec1cc61f4af",
 
-  // --- ID 更新器专用配置 ---
-  // id_updater.py 上次使用的模式 ('direct_chat' 或 'battle')
+  // --- ID updater metadata ---
+  // Last mode chosen in id_updater.py ('direct_chat' or 'battle').
   "id_updater_last_mode": "battle",
-  // id_updater.py 在 Battle 模式下，要更新的目标 ('A' 或 'B')
+  // When using battle mode, which assistant (A or B) should receive the new IDs.
   "id_updater_battle_target": "B",
 
-  // --- 更新设置 ---
-  // 开关：自动检查更新
-  // 设置为 true，程序启动时会连接到 GitHub 检查新版本。
+  // --- Update settings ---
+  // Toggle automatic update checks at startup.
   "enable_auto_update": true,
 
-  // --- 功能开关 ---
+  // --- Feature toggles ---
 
-  // 功能开关：绕过敏感词检测
-  // 在原始用户请求的对话中，额外注入一个内容为空的用户消息，以尝试绕过敏感词审查。
+  // Inject an empty user message to help bypass sensitive-word screening.
   "bypass_enabled": true,
 
-  // 功能开关：酒馆模式 (Tavern Mode)
-  // 此模式专为需要完整历史记录注入的场景设计（如酒馆AI、SillyTavern等）。
+  // Tavern Mode merges system prompts for SillyTavern-style clients.
   "tavern_mode_enabled": false,
 
-  // --- 文件床设置 ---
-  // 开关：启用文件床
-  // 设置为 true 时，所有图片等多媒体附件将首先上传到您自建的文件床服务器，
-  // 然后将返回的 URL 用于后续请求，而不是直接发送 base64 数据。
+  // --- File bed settings ---
+  // Enable to upload multimedia attachments to the auxiliary file-bed server
+  // and replace base64 payloads with public URLs.
   "file_bed_enabled": false,
 
-  // 文件床上传API的URL
-  // 这是您 file_bed_server/main.py 服务的 /upload 端点地址。
-  // 注意: 为了兼容可能存在的旧版解析器，建议将 // 转义为 \/\/
+  // Upload endpoint of the file-bed server (use escaped // for compatibility).
   "file_bed_upload_url": "http:\/\/127.0.0.1:5180/upload",
 
-  // 文件床 API Key
-  // 如果您在 file_bed_server/main.py 中设置了 API_KEY，请在此处填写。
+  // API key for the file-bed server (if configured in file_bed_server/main.py).
   "file_bed_api_key": "your_secret_api_key",
 
-  // --- 模型映射设置 ---
+  // --- Model mapping options ---
 
-  // 开关：当模型映射不存在时，使用默认ID
-  // 如果设置为 true，当请求的模型在 model_endpoint_map.json 中找不到时，
-  // 将会使用 config.jsonc 中定义的全局 session_id 和 message_id。
-  // 如果设置为 false，找不到映射时将返回错误。
+  // When true, fall back to the global session/message IDs if a model mapping
+  // is missing in model_endpoint_map.json; otherwise raise an error.
   "use_default_ids_if_mapping_not_found": true,
 
-  // --- 高级设置 ---
+  // --- Advanced settings ---
 
-  // 流式响应超时时间（秒）
-  // 服务器等待来自浏览器的下一个数据块的最长时间。非流式也使用此值。
-  // 如果您的网络连接较慢或模型响应时间很长，可以适当增加此值。
+  // Streaming timeout (seconds). Increase if your network is slow or models
+  // regularly take longer to respond.
   "stream_response_timeout_seconds": 360,
 
-  // --- 自动重启设置 ---
+  // --- Auto-restart settings ---
 
-  // 开关：启用空闲自动重启
-  // 当服务器在指定时间内（如下所设）没有收到任何 API 请求时，将自动重启。
+  // Enable automatic restart when the server has been idle beyond the timeout.
   "enable_idle_restart": true,
 
-  // 空闲重启超时时间（秒）
-  // 服务器在“检查与更新完毕”后，若超过此时长未收到任何请求，则会重启。
-  // 5分钟 = 300秒。设置为 -1 可禁用此超时功能（即使上面开关为true）。
+  // Idle restart timeout in seconds. Set to -1 to disable even if the switch is true.
   "idle_restart_timeout_seconds": -1,
 
-  // --- 安全设置 ---
+  // --- Security ---
 
-  // API Key
-  // 设置一个 API Key 来保护您的服务。
-  // 如果设置了此值，所有到 /v1/chat/completions 的请求都必须在 Authorization 头部中包含正确的 Bearer Token。
+  // API key required for /v1/chat/completions requests (use Authorization header).
   "api_key": ""
 }

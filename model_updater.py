@@ -3,33 +3,31 @@ import requests
 import time
 import logging
 
-# --- 配置 ---
+# --- Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-API_SERVER_URL = "http://127.0.0.1:5102" # 与 api_server.py 中的端口匹配
+API_SERVER_URL = "http://127.0.0.1:5102"  # Must match the port used in api_server.py
 
 def trigger_model_update():
-    """
-    通知主服务器开始模型列表更新流程。
-    """
+    """Notify the main server to start the model list refresh workflow."""
     try:
-        logging.info("正在向主服务器发送模型列表更新请求...")
+        logging.info("Requesting model list refresh from the main server...")
         response = requests.post(f"{API_SERVER_URL}/internal/request_model_update")
         response.raise_for_status()
         
         if response.json().get("status") == "success":
-            logging.info("✅ 已成功请求服务器更新模型列表。")
-            logging.info("请确保 LMArena 页面已打开，脚本将自动从页面提取最新模型列表。")
-            logging.info("服务器将把结果保存在 `available_models.json` 文件中。")
+            logging.info("✅ Update request accepted. The server will refresh the model list.")
+            logging.info("Keep an LMArena tab open so the userscript can extract the latest models.")
+            logging.info("The refreshed list will be stored in `available_models.json`.")
         else:
-            logging.error(f"❌ 服务器返回错误: {response.json().get('message')}")
+            logging.error(f"❌ Server responded with an error: {response.json().get('message')}")
 
     except requests.exceptions.RequestException as e:
-        logging.error(f"❌ 无法连接到主服务器 ({API_SERVER_URL})。")
-        logging.error("请确保 `api_server.py` 正在运行中。")
+        logging.error(f"❌ Could not connect to the main server ({API_SERVER_URL}).")
+        logging.error("Ensure that `api_server.py` is running.")
     except Exception as e:
-        logging.error(f"发生未知错误: {e}")
+        logging.error(f"Unexpected error: {e}")
 
 if __name__ == "__main__":
     trigger_model_update()
-    # 脚本执行完毕后自动退出
+    # Allow logs to flush before the script exits
     time.sleep(2)
